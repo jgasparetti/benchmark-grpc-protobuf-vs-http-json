@@ -1,17 +1,18 @@
-package httpjson
+package fiberjson
 
 import (
-	"encoding/json"
 	"errors"
 	"log"
-	"net/http"
 	"net/mail"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 // Start entrypoint
 func Start() {
-	http.HandleFunc("/", CreateUser)
-	log.Println(http.ListenAndServe(":60001", nil))
+	app := fiber.New()
+	app.Post("/", CreateUser)
+	log.Println(app.Listen(":60002"))
 }
 
 // User type
@@ -36,38 +37,26 @@ type Response struct {
 }
 
 // CreateUser handler
-func CreateUser(w http.ResponseWriter, r *http.Request) {
-	decoder := json.NewDecoder(r.Body)
-	var user User
-	err := decoder.Decode(&user)
-	if err != nil {
-		return
-	}
-	defer r.Body.Close()
+func CreateUser(c *fiber.Ctx) error {
 
-	w.Header().Set("Content-Type", "application/json")
+	var user User
+	if err := c.BodyParser(&user); err != nil {
+		return err
+	}
 	validationErr := validate(user)
 	if validationErr != nil {
-		err = json.NewEncoder(w).Encode(Response{
+		return c.Status(500).JSON(&Response{
 			Code:    500,
 			Message: validationErr.Error(),
 		})
-		if err != nil {
-			return
-		}
-		return
 	}
 
 	user.ID = "1000000"
-	err = json.NewEncoder(w).Encode(Response{
+	return c.Status(200).JSON(&Response{
 		Code:    200,
 		Message: "OK",
 		User:    &user,
 	})
-	if err != nil {
-		return
-	}
-	return
 }
 
 func validate(in User) error {

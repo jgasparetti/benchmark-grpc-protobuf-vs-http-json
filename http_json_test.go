@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plutov/benchmark-grpc-protobuf-vs-http-json/http-json"
+	httpjson "benchmark-grpc-protobuf-vs-http-json/http-json"
 )
 
 func init() {
@@ -17,6 +17,9 @@ func init() {
 
 func BenchmarkHTTPJSON(b *testing.B) {
 	client := &http.Client{}
+
+	b.ResetTimer()
+	b.StartTimer()
 
 	for n := 0; n < b.N; n++ {
 		doPost(client, b)
@@ -28,9 +31,18 @@ func doPost(client *http.Client, b *testing.B) {
 		Email:    "foo@bar.com",
 		Name:     "Bench",
 		Password: "bench",
+		Other:    "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
+		Field1:   1,
+		Field2:   2.3,
+		Field3:   []string{"a", "b", "c"},
+		Field4:   []int64{0, 1, 2, 3},
+		Field5:   []float32{0, 1, 2, 3, 4},
 	}
 	buf := new(bytes.Buffer)
-	json.NewEncoder(buf).Encode(u)
+	err := json.NewEncoder(buf).Encode(u)
+	if err != nil {
+		b.Fatalf("encoding error: %v", err)
+	}
 
 	resp, err := client.Post("http://127.0.0.1:60001/", "application/json", buf)
 	if err != nil {

@@ -1,13 +1,13 @@
 package grpcprotobuf
 
 import (
+	"benchmark-grpc-protobuf-vs-http-json/grpc-protobuf/generated/proto"
+	"context"
 	"errors"
 	"log"
 	"net"
 	"net/mail"
 
-	"github.com/plutov/benchmark-grpc-protobuf-vs-http-json/grpc-protobuf/proto"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
 
@@ -16,15 +16,18 @@ func Start() {
 	lis, _ := net.Listen("tcp", ":60000")
 
 	srv := grpc.NewServer()
-	proto.RegisterAPIServer(srv, &Server{})
+	proto.RegisterApiServer(srv, Server{})
+	// reflection.Register(srv)
 	log.Println(srv.Serve(lis))
 }
 
 // Server type
-type Server struct{}
+type Server struct {
+	proto.UnimplementedApiServer
+}
 
 // CreateUser handler
-func (s *Server) CreateUser(ctx context.Context, in *proto.User) (*proto.Response, error) {
+func (s Server) CreateUser(ctx context.Context, in *proto.User) (*proto.Response, error) {
 	validationErr := validate(in)
 	if validationErr != nil {
 		return &proto.Response{
